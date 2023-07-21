@@ -1,5 +1,6 @@
 #include "../common.hxx"
 #include <functional>
+#include <list>
 
 struct Element
 {
@@ -14,6 +15,10 @@ class List
 {
 public:
     List() : _top(nullptr) {}
+    List(unsigned int & n) : _top(nullptr) {
+        for (auto i = 0; i < n; ++i)
+            this->append(0);
+    }
     ~List() {
         _recursiveDelete(_top);
     }
@@ -46,7 +51,7 @@ private:
 
     int _recursiveGetItem (Element * elem, unsigned int & idx) {
         if (elem == nullptr)
-            throw nb::index_error();
+            throw index_error("asdf");
         else if (idx == 0)
             return elem->value;
         else
@@ -57,12 +62,38 @@ private:
     Element * _top;
 };
 
-NB_MODULE(list, m)
+
+struct StlList : public std::list<int>
 {
-    nb::class_<List>(m, "List")
-        .def(nb::init<>())
+    StlList() : std::list<int>() {}
+    StlList(const unsigned int & size) : std::list<int>(size, 0) {}
+
+    void append(const int & value) {
+        this->push_back(value);
+    }
+
+    int __getitem__ (const unsigned int & i) {
+        return *std::next(this->begin(), i);
+    }
+};
+
+
+DEFINE_MODULE(MODULE_NAME(list), m)
+{
+    py::class_<List>(m, "MyList")
+        .def(py::init<>())
+        .def(py::init<unsigned int &>())
         .def("append", &List::append)
         .def("__len__", &List::__len__)
         .def("__getitem__", &List::__getitem__)
         ;
+
+    py::class_<StlList>(m, "StlList")
+        .def(py::init<>())
+        .def(py::init<unsigned int>())
+        .def("append", &StlList::append)
+        .def("__len__", &StlList::size)
+        .def("__getitem__", &StlList::__getitem__)
+        ;
 }
+

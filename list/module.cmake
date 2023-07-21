@@ -1,2 +1,4 @@
-nanobind_add_module(list list/list.cxx)
-
+add_module(TARGET list
+           SOURCES list/list.cxx
+           HEADERS common.hxx
+)
