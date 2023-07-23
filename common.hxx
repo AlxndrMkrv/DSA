@@ -2,6 +2,7 @@
 
 #ifdef ENABLE_NB
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 namespace py = nanobind;
 const auto index_error = nanobind::index_error;
 #define DEFINE_MODULE NB_MODULE

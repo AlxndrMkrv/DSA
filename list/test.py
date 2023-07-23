@@ -1,62 +1,133 @@
-import matplotlib.pyplot as plt
-import sys
-from timeit import timeit
+from importlib import import_module
+from types import ModuleType
+import pytest
 
-sys.path.append(sys.argv[-1])
-
-import list_nb
-import list_pb
-
-class PyList (list):
-    def __init__(self, n: int = 0):
-        if n:
-            list.__init__(self, (0 for _ in range(n)))
-        else:
-            list.__init__(self)
+# import modules to be tested
+import list_nb as nb
+import list_pb as pb
 
 
-TestObjects = {"list": PyList, 
-               "MyList_nano": list_nb.MyList,
-               "MyList_pb11": list_pb.MyList,
-               "StlList_nano": list_nb.StlList,
-               "StlList_pb11": list_pb.StlList}
-
-class Performance:
-    def __init__(self, max_value: int = 1000, steps_number: int = 1000):
-        self.x = [max_value := int(max_value * 0.95)
-                  for _ in range(steps_number) if max_value > 1][::-1]
-
-    def measure_append_time(self, TList, replay: int = 10):
-        return [timeit(f"[l.append(0) for i in range({x})]", number=replay, 
-                       globals={'l': TList()}) for x in self.x]
-
-    def measure_get_time(self, TList, replay: int = 10):
-        return [timeit(f"l[{round(x-1)}]", number=replay, 
-                       globals={'l': TList(x)}) for x in self.x]
-    
-    def plot(self):
-        fix, ax = plt.subplots(2, 2, sharex=True)
-        ax[0][0].set_title("Append time")
-        for lbl, obj in TestObjects.items():
-            ax[0][0].plot(self.x, 
-                          self.measure_append_time(obj), 
-                          label=lbl)
-        ax[0][0].legend()
-        ax[0][0].grid()
-
-        ax[1][0].set_title("Get time")
-        for lbl, obj in TestObjects.items():
-            ax[1][0].plot(self.x,
-                          self.measure_get_time(obj),
-                          label=lbl)
-        ax[1][0].legend()
-        ax[1][0].grid()
-
-        plt.tight_layout()
-        plt.show()
-
-Performance().plot()
+dep = pytest.mark.dependency
+prm = pytest.mark.parametrize
 
 
+all_lists = [pytest.param(getattr(globals()[mod], list_type),
+                          marks=dep(depends=[mod]))
+             for mod, list_type in [("nb", "StlList"),
+                                    ("nb", "MyList"),
+                                    ("pb", "StlList"),
+                                    ("pb", "MyList")]]
+
+
+@prm("module", [pytest.param(nb, marks=dep(name="nb")),
+                pytest.param(pb, marks=dep(name="pb"))])
+def test_exported_types(module):
+    assert all(hasattr(module, attr)
+               for attr in ["MyList", "StlList"])
+
+
+# constructors
+@prm("TList", all_lists)
+def test_constructor(TList):
+    assert isinstance(TList(), TList)
+    assert isinstance(TList(100), TList)
+
+# __len__()
+@prm("TList", all_lists)
+def test_len(TList):
+    assert len(TList()) == 0
+    assert len(TList(55)) == 55
+
+# append()
+@prm("TList", all_lists)
+def test_append(TList):
+    lst = TList()
+    [lst.append(i) for i in range(5)]
+    assert len(lst) == 5
+
+# __repr__()
+@prm("TList", all_lists)
+def test_repr(TList):
+    lst = TList()
+    rng = range(4, 0, -1)
+    [lst.append(i) for i in rng]
+    assert str(lst) == str([i for i in rng])
+
+# __getitem__()
+@prm("TList", all_lists)
+def test_getitem(TList):
+    lst = TList()
+    [lst.append(i) for i in range(10)]
+    assert all([lst[i] == i for i in range(10)])
+
+# __setitem__()
+@prm("TList", all_lists)
+def test_setitem(TList, length: int = 5):
+    rng = range(length)
+    lst = TList(length)
+    for i in rng:
+        lst[i] = i
+    assert str(lst) == str([i for i in rng])
+
+# insert()
+@prm("TList", all_lists)
+def test_insert(TList):
+    lst = TList(2)
+    lst.insert(0, 1)
+    assert str(lst) == str([1, 0, 0])
+    assert len(lst) == 3
+    lst.insert(99, 3)
+    assert str(lst) == str([1, 0, 0, 3])
+    assert len(lst) == 4
+    lst.insert(2, 5)
+    assert str(lst) == str([1, 0, 5, 0, 3])
+    assert len(lst) == 5
+
+# pop()
+@prm("TList", all_lists)
+def test_pop(TList):
+    lst = TList()
+    try:
+        lst.pop()
+        assert False
+    except IndexError:
+        assert True
+    except Exception as exc:
+        assert False
+    [lst.append(i+1) for i in range(5)]
+    assert lst.pop(2) == 3
+    assert str(lst) == str([1, 2, 4, 5])
+    assert len(lst) == 4
+    assert lst.pop(0) == 1
+    assert str(lst) == str([2, 4, 5])
+    assert len(lst) == 3
+    assert lst.pop() == 5
+    assert str(lst) == str([2, 4])
+    assert len(lst) == 2
+
+
+'''
+def test_implementation(TList):
+    # default constructor
+    assert isinstance(TList(), TList)
+
+    # assign constructor
+    assert isinstance(TList(10), TList)
+
+    # __repr__()
+    lst = TList()
+    assert str(lst) == "[]"
+
+    # append()
+    [lst.append(i) for i in [1,2,3,4,5]]
+    assert str(lst) == "[1, 2, 3, 4, 5]"
+
+    # __len__()
+    assert len(TList()) == 0
+    assert len(TList(100)) == 100
+
+    # __getitem__()
+    for i, value in enumerate(lst):
+        assert lst[i] == i+1 == value'''
 
 

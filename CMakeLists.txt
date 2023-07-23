@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(DSA LANGUAGES CXX)
+enable_testing()
 
 if (REQUIRED_PYTHON_VERSION)
     message(STATUS "Required Python version is ${REQUIRED_PYTHON_VERSION}")
@@ -38,7 +39,7 @@ find_package(pybind11 CONFIG REQUIRED)
 nanobind_build_library(nanobind-static)
 
 function(add_module)
-    set(vars TARGET)
+    set(vars TARGET TEST PERFORMANCE)
     set(lists SOURCES HEADERS)
     cmake_parse_arguments( P "" "${vars}" "${lists}" ${ARGN} )
 
@@ -49,6 +50,7 @@ function(add_module)
     set(COMMON_FLAGS -I${Python_INCLUDE_DIRS} -shared -Ofast -fPIC)
 
     add_custom_target(${P_TARGET} SOURCES ${P_SOURCES} ${P_HEADERS}
+                                          ${P_TEST} ${P_PERFORMANCE}
                                   DEPENDS nanobind-static
     )
     add_custom_command(TARGET ${P_TARGET} PRE_BUILD
@@ -65,6 +67,22 @@ function(add_module)
                             -o ${P_TARGET}_pb${CMAKE_SHARED_MODULE_SUFFIX}
                        COMMENT "Compiling pybind11 version of \"${P_TARGET}\""
     )
+    add_custom_target(${P_TARGET}_performance
+                      SOURCES ${P_PERFORMANCE}
+                      COMMAND ${Python_EXECUTABLE}
+                              ${PROJECT_SOURCE_DIR}/${P_PERFORMANCE} .
+    )
+    add_test(NAME ${P_TARGET} 
+             COMMAND ${Python_EXECUTABLE} -m pytest
+                     ${PROJECT_SOURCE_DIR}/${P_TEST}
+             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    #add_custom_command(TARGET ${P_TARGET} POST_BUILD
+    #                   COMMAND ${Python_EXECUTABLE}
+    #                   ARGS ${P_TEST}
+    #                   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    #                   COMMENT "Testing libraries"
+    #)
 endfunction()
 
 include(array/module.cmake)
