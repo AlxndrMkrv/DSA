@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import sys
+import os
 from timeit import timeit
 
-sys.path.append(sys.argv[-1])
+sys.path.append(os.curdir)
 
 import list_nb
 import list_pb

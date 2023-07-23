@@ -47,7 +47,7 @@ function(add_module)
         list(APPEND MOD_SOURCES ${PROJECT_SOURCE_DIR}/${SRC})
     endforeach()
 
-    set(COMMON_FLAGS -I${Python_INCLUDE_DIRS} -shared -Ofast -fPIC)
+    set(COMMON_FLAGS -I${Python_INCLUDE_DIRS} -shared -O3 -fPIC)
 
     add_custom_target(${P_TARGET} SOURCES ${P_SOURCES} ${P_HEADERS}
                                           ${P_TEST} ${P_PERFORMANCE}
@@ -70,19 +70,14 @@ function(add_module)
     add_custom_target(${P_TARGET}_performance
                       SOURCES ${P_PERFORMANCE}
                       COMMAND ${Python_EXECUTABLE}
-                              ${PROJECT_SOURCE_DIR}/${P_PERFORMANCE} .
+                              ${PROJECT_SOURCE_DIR}/${P_PERFORMANCE}
+                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     add_test(NAME ${P_TARGET} 
              COMMAND ${Python_EXECUTABLE} -m pytest
                      ${PROJECT_SOURCE_DIR}/${P_TEST}
              WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
-    #add_custom_command(TARGET ${P_TARGET} POST_BUILD
-    #                   COMMAND ${Python_EXECUTABLE}
-    #                   ARGS ${P_TEST}
-    #                   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    #                   COMMENT "Testing libraries"
-    #)
 endfunction()
 
 include(array/module.cmake)
