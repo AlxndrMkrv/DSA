@@ -19,10 +19,6 @@ class AbstractList
 {
 public:
     AbstractList() : _size(0), _first(nullptr), _last(nullptr) {}
-    AbstractList(unsigned int & n) : AbstractList() {
-        for (auto i = 0; i < n; ++i)
-            this->append(T());
-    }
     ~AbstractList() {
         if (_first == nullptr)
             return;
@@ -37,11 +33,33 @@ public:
         delete recursive(_first);
     }
 
-    static inline unsigned int __len__ (const AbstractList<T> & self) {
-        return self._size;
+    Element<T> * operator [] (int idx)
+    {
+        if (idx < 0)
+            idx += _size;
+
+        if (! _size)
+            throw py::index_error("empty list");
+        else if (idx >= _size)
+            throw py::index_error("list index is out of range");
+        else if (! idx )
+            return _first;
+        else if (idx == (_size - 1))
+            return _last;
+
+        std::function<Element<T> *(Element<T> *)> recursive =
+            [&](Element<T> * itr) -> Element<T> *
+        {
+            return (! --idx) ? itr->next : recursive(itr->next);
+        };
+        return recursive(_first);
     }
 
-    void append(const T & value) {
+    inline unsigned int size () const {
+        return _size;
+    }
+
+    void append (const T & value) {
         if (_first == nullptr) {
             _first = _last = new Element<T>(value, nullptr);
         } else {
@@ -51,22 +69,28 @@ public:
         ++_size;
     }
 
-    void insert(const unsigned int & idx, const T & value) {
-        if (idx == 0) {
+    void insert (int idx, const T & value) {
+        if (idx < 0)
+            idx += _size;
+
+        if (_size == 0) {
+            _first = _last = new Element<T>(value, nullptr);
+        } else if (idx <= 0) {
             _first = new Element<T>(value, _first);
-            ++_size;
         } else if (idx >= _size - 1) {
-            append(value);
+            _last->next = new Element<T>(value, nullptr);
+            _last = _last->next;
         } else {
             Element<T> * prev = (*this)[idx-1];
             prev->next = new Element<T>(value, prev->next);
-            ++_size;
         }
+        ++_size;
     }
 
-    T pop (int idx = -1) {
+    T pop (int idx = -1)
+    {
         idx = idx < 0 ? _size - 1 : idx;
-        py::object value;
+        T value;
         if (idx >= _size || ! _size) {
             throw py::index_error("pop index out of range");
         } else if (_size == 1) {
@@ -94,35 +118,15 @@ public:
         return value;
     }
 
-    Element<T> * operator [] (int idx) {
-        if (idx < 0)
-            idx = _size - idx;
-
-        if (! _size)
-            throw py::index_error("empty list");
-        else if (idx >= _size)
-            throw py::index_error("list index is out of range");
-        else if (! idx )
-            return _first;
-        else if (idx == (_size - 1))
-            return _last;
-
-        std::function<Element<T> *(Element<T> *)> recursive =
-            [&](Element<T> * itr) -> Element<T> *
-        {
-            return (! --idx) ? itr->next : recursive(itr->next);
-        };
-        return recursive(_first);
-    }
-
-    inline T __getitem__ (const unsigned int & idx) {
+    /*inline T __getitem__ (const unsigned int & idx) {
         return (*this)[idx]->value;
     }
 
-    void __setitem__(const unsigned int & idx,
-                     const T & value) {
-        (*this)[idx]->value = value;
-    }
+    inline T __setitem__ (AbstractList<T> & self,
+                               const unsigned int & idx,
+                               const T & value) {
+        self[idx]->value = value;
+    }*/
 
 protected:
     size_t _size;

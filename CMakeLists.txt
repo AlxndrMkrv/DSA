@@ -47,7 +47,8 @@ function(add_module)
         list(APPEND MOD_SOURCES ${PROJECT_SOURCE_DIR}/${SRC})
     endforeach()
 
-    set(COMMON_FLAGS -I${Python_INCLUDE_DIRS} -shared -O3 -fPIC)
+    set(COMMON_FLAGS -I${Python_INCLUDE_DIRS} -shared -O3 -fPIC
+                     -fvisibility=default -g)
 
     add_custom_target(${P_TARGET} SOURCES ${P_SOURCES} ${P_HEADERS}
                                           ${P_TEST} ${P_PERFORMANCE}
