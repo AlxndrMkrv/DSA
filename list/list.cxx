@@ -1,142 +1,27 @@
-#include "../common.hxx"
-#include <functional>
+#include "abstract_list.hxx"
 #include <list>
 #include <sstream>
 
 
-struct Element
-{
-    Element(const int & val, Element * nxt) :
-        value(val), next(nxt) {}
-
-    int value;
-    Element * next;
-};
-
-
-class List
+class List : public AbstractList<py::object>
 {
 public:
-    List() : _size(0), _first(nullptr), _last(nullptr) {}
-    List(unsigned int & n) : List() {
-        for (auto i = 0; i < n; ++i)
-            this->append(0);
-    }
-    ~List() {
-        if (_first == nullptr)
-            return;
-
-        std::function<Element *(Element*)> recursive =
-            [&](Element *elem) -> Element *
-        {
-            if (elem->next != nullptr)
-                delete recursive(elem->next);
-            return elem;
-        };
-        delete recursive(_first);
-    }
-
     std::string __repr__ () {
         std::stringstream sstr;
-        std::function<std::string(Element*)> recursive =
-            [&](Element * elem) -> std::string {
+        std::function<std::string(Element<py::object> *)> recursive =
+            [&recursive](Element<py::object> * elem) -> std::string {
             return elem == nullptr ? ""
-                                   : std::to_string(elem->value) +
-                                         (elem->next == nullptr ? ""
-                                                                : ", " + recursive(elem->next));
+                                   : obj2str(elem->value) +
+                                     (elem->next == nullptr ? ""
+                                                            : ", " + recursive(elem->next));
         };
         sstr << "[" << recursive(_first) << "]";
         return sstr.str();
     }
 
-    inline unsigned int __len__ () { return _size; }
-
-    void append(const int & value) {
-        if (_first == nullptr) {
-            _first = _last = new Element(value, nullptr);
-        } else {
-            _last->next = new Element(value, nullptr);
-            _last = _last->next;
-        }
-        ++_size;
+    static inline void append2 (List & self, const py::object & obj) {
+        self.append(obj);
     }
-
-    void insert(const unsigned int & idx, const int & value) {
-        if (idx == 0) {
-            _first = new Element(value, _first);
-            ++_size;
-        } else if (idx >= _size - 1) {
-            append(value);
-        } else {
-            Element * prev = (*this)[idx-1];
-            prev->next = new Element(value, prev->next);
-            ++_size;
-        }
-    }
-
-    int pop (int idx = -1) {
-        idx = idx < 0 ? _size - 1 : idx;
-        int value = 0;
-        if (idx >= _size || ! _size) {
-            throw py::index_error("pop index out of range");
-        } else if (_size == 1) {
-            value = _first->value;
-            delete _first;
-            _first = _last = nullptr;
-        } else if (idx == _size-1) {
-            value = _last->value;
-            delete _last;
-            _last = (*this)[_size-2];
-            _last->next = nullptr;
-        } else if (idx == 0) {
-            value = _first->value;
-            Element * oldFirst = _first;
-            _first = _first->next;
-            delete oldFirst;
-        } else {
-            Element * elemBefore = (*this)[idx-1];
-            Element * elemAfter = elemBefore->next->next;
-            value = elemBefore->next->value;
-            delete elemBefore->next;
-            elemBefore->next = elemAfter;
-        }
-        --_size;
-        return value;
-    }
-
-    Element * operator [] (const unsigned int & idx) {
-        if (! _size)
-            throw py::index_error("empty list");
-        else if (idx >= _size)
-            throw py::index_error("list index is out of range");
-        else if (! idx )
-            return _first;
-        else if (idx == (_size - 1))
-            return _last;
-
-        int i = idx;
-        std::function<Element *(Element *)> recursive =
-            [&](Element * itr) -> Element *
-        {
-            return (! --i) ? itr->next : recursive(itr->next);
-        };
-        return recursive(_first);
-
-    }
-
-    inline int __getitem__ (const unsigned int & idx) {
-        return (*this)[idx]->value;
-    }
-
-    void __setitem__(const unsigned int & idx,
-                     const int & value) {
-        (*this)[idx]->value = value;
-    }
-
-private:
-    size_t _size;
-    Element * _first;
-    Element * _last;
 };
 
 
@@ -199,7 +84,12 @@ DEFINE_MODULE(MODULE_NAME(list), m)
         .def(py::init<>())
         .def(py::init<unsigned int &>())
         .def("__repr__", &List::__repr__)
+        #ifdef ENABLE_NB
+        .def("append", &List::append2)
+        .def_static("test", [](const py::object &obj){return obj2str(obj);})
+        #elif ENABLE_PB
         .def("append", &List::append)
+        #endif
         .def("__len__", &List::__len__)
         .def("__getitem__", &List::__getitem__)
         .def("__setitem__", &List::__setitem__)

@@ -73,7 +73,7 @@ function(add_module)
                               ${PROJECT_SOURCE_DIR}/${P_PERFORMANCE}
                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
-    add_test(NAME ${P_TARGET} 
+    add_test(NAME ${P_TARGET}
              COMMAND ${Python_EXECUTABLE} -m pytest
                      ${PROJECT_SOURCE_DIR}/${P_TEST}
              WORKING_DIRECTORY ${PROJECT_BINARY_DIR}

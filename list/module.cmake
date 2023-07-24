@@ -3,4 +3,5 @@ add_module(TARGET list
            PERFORMANCE list/performance.py
            SOURCES list/list.cxx
            HEADERS common.hxx
+                   list/abstract_list.hxx
 )
