@@ -1,6 +1,5 @@
-from importlib import import_module
-from types import ModuleType
 import pytest
+import random
 
 # import modules to be tested
 import list_nb as nb
@@ -30,28 +29,32 @@ def test_exported_types(module):
 @prm("TList", all_lists)
 def test_constructor(TList):
     assert isinstance(TList(), TList)
-    assert isinstance(TList(100), TList)
+    assert isinstance(TList([1]), TList)
 
 # __len__()
 @prm("TList", all_lists)
-def test_len(TList):
+def test_len(TList, n: int = random.choice(range(10, 100))):
     assert len(TList()) == 0
-    assert len(TList(55)) == 55
+    assert len(TList(range(n))) == n
 
 # append()
 @prm("TList", all_lists)
 def test_append(TList):
     lst = TList()
-    [lst.append(i) for i in range(5)]
+    lst.append(5)
+    lst.append(0.1)
+    lst.append("asdf")
+    lst.append([1])
+    lst.append(TList())
     assert len(lst) == 5
 
 # __repr__()
 @prm("TList", all_lists)
-def test_repr(TList):
+def test_repr(TList, n: int = random.choice(range(5, 10))):
     lst = TList()
-    rng = range(4, 0, -1)
-    [lst.append(i) for i in rng]
-    assert str(lst) == str([i for i in rng])
+    ref_list = [random.choice(range(1000)) for _ in range(n)]
+    [lst.append(i) for i in ref_list]
+    assert str(lst) == str(ref_list)
 
 # __getitem__()
 @prm("TList", all_lists)
@@ -64,7 +67,7 @@ def test_getitem(TList):
 @prm("TList", all_lists)
 def test_setitem(TList, length: int = 5):
     rng = range(length)
-    lst = TList(length)
+    lst = TList(rng)
     for i in rng:
         lst[i] = i
     assert str(lst) == str([i for i in rng])
@@ -72,7 +75,7 @@ def test_setitem(TList, length: int = 5):
 # insert()
 @prm("TList", all_lists)
 def test_insert(TList):
-    lst = TList(2)
+    lst = TList([0, 0])
     lst.insert(0, 1)
     assert str(lst) == str([1, 0, 0])
     assert len(lst) == 3
@@ -92,7 +95,7 @@ def test_pop(TList):
         assert False
     except IndexError:
         assert True
-    except Exception as exc:
+    except:
         assert False
     [lst.append(i+1) for i in range(5)]
     assert lst.pop(2) == 3
