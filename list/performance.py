@@ -50,6 +50,11 @@ class Performance:
                        globals={'l': self.__init_list(TList, x)})
                 for x in self.x]
 
+    def measure_init_time(self, TList, replay: int = 10):
+        return [timeit(f"L(range({x}))", number=replay,
+                       globals={'L': TList})
+                for x in self.x]
+
     def worker(self, kw: dict):
         #dict.update(kw, {"values": kw["method"](kw["TList"])})
         print(f"worker({kw})")
@@ -65,7 +70,8 @@ class Performance:
                                     (1, 0, "Get middle element", self.measure_get_time),
                                     (0, 1, "Size", self.measure_size_time),
                                     (1, 1, "Insert to middle", self.measure_insert_time),
-                                    (0, 2, "Pop from middle", self.measure_pop_time)
+                                    (0, 2, "Pop from middle", self.measure_pop_time),
+                                    (1, 2, "Initialization", self.measure_init_time)
                                     ]:
             ax[i][j].set_title(title)
             #with Pool() as pool:
