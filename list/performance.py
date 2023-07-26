@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import sys
 import os
-from timeit import timeit
 
 sys.path.append(os.curdir)
 
+from basic_performance import Basic
 import list_nb
 import list_pb
 
@@ -15,6 +15,7 @@ TestObjects = {"list": list,
                "StlList_pb11": list_pb.StlList
 }
 
+<<<<<<< HEAD
 class Performance:
     def __init__(self, max_value: int = 1000, steps_number: int = 1000):
         recursive = lambda x: int(x) if x < 1 else int(recursive(x)*0.95)
@@ -64,8 +65,11 @@ class Performance:
         print(f"__add_plot({kw})")
         #kw["ax"].plot(self.x, kw["values"], label=kw["label"])
 
+=======
+class Performance (Basic):
+>>>>>>> d340b2d (Added array implementation and performance. Tests needed. Made some minor updates)
     def plot(self):
-        fix, ax = plt.subplots(2, 3, sharex=True)
+        fig, ax = plt.subplots(2, 3, sharex=True)
         for i, j, title, method in [(0, 0, "Append(x)", self.measure_append_time),
                                     (1, 0, "Get middle element", self.measure_get_time),
                                     (0, 1, "Size", self.measure_size_time),
@@ -74,22 +78,13 @@ class Performance:
                                     (1, 2, "Initialization", self.measure_init_time)
                                     ]:
             ax[i][j].set_title(title)
-            #with Pool() as pool:
-            #    result = pool.map(self.worker,
-            #                      [{"ax": ax[i][j], "method": method, "TList": TList,
-            #                        "label": lbl} for lbl, TList in TestObjects.items()])
-            #    pool.close()
-            #    pool.join()
-            #    print(result)
             for lbl, obj in TestObjects.items():
-                ax[i][j].plot(self.x,
-                              method(obj, 10),
-                              label=lbl)
+                ax[i][j].plot(self.N, method(obj, 10), label=lbl)
             ax[i][j].legend()
             ax[i][j].grid()
 
         plt.tight_layout()
         plt.show()
 
-Performance(max_value=10000).plot()
+Performance(max_value=1000).plot()
 

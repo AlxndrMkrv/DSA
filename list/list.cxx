@@ -1,6 +1,5 @@
 #include "abstract_list.hxx"
 #include <list>
-#include <sstream>
 
 class List : public AbstractList<py::object>
 {
@@ -78,17 +77,13 @@ struct StlList : public std::list<py::object>
     }
 
     inline int __size__ () const {
-        return std::size(*this);
+        return this->size();
     }
 };
 
 
 DEFINE_MODULE(MODULE_NAME(list), m)
 {
-//#ifdef ENABLE_NB
-//    NB_MAKE_OPAQUE(py::object)
-//#endif
-
     py::class_<List>(m, "MyList")
         .def(py::init<>())
         .def(py::init<py::object>(), py::arg("iterable"))

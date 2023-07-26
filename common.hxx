@@ -1,8 +1,11 @@
 #pragma once
 
+#include <sstream>
+
 #ifdef ENABLE_NB
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/array.h>
 namespace py = nanobind;
 #define DEFINE_MODULE NB_MODULE
 #define MODULE_NAME(name) name ## _nb

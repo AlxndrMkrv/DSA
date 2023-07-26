@@ -38,6 +38,7 @@ find_package(pybind11 CONFIG REQUIRED)
 
 nanobind_build_library(nanobind-static)
 
+
 function(add_module)
     set(vars TARGET TEST PERFORMANCE)
     set(lists SOURCES HEADERS)
@@ -80,6 +81,8 @@ function(add_module)
              WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
 endfunction()
+
+add_custom_target(common SOURCES common.hxx basic_performance.py)
 
 include(array/module.cmake)
 include(conversion/module.cmake)
