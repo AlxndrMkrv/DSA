@@ -59,6 +59,7 @@ function(add_module)
                        COMMAND ${CMAKE_CXX_COMPILER}
                        ARGS ${MOD_SOURCES} ${COMMON_FLAGS} -DENABLE_NB
                             -I${NB_DIR}/include -L. -lnanobind-static
+                            -I${PROJECT_SOURCE_DIR}/headers
                             -o ${P_TARGET}_nb${CMAKE_SHARED_MODULE_SUFFIX}
                        COMMENT "Compiling nanobind version of \"${P_TARGET}\""
     )
@@ -66,6 +67,7 @@ function(add_module)
                        COMMAND ${CMAKE_CXX_COMPILER}
                        ARGS ${MOD_SOURCES}  ${COMMON_FLAGS} -DENABLE_PB
                             -I${pybind11_INCLUDE_DIR}
+                            -I${PROJECT_SOURCE_DIR}/headers
                             -o ${P_TARGET}_pb${CMAKE_SHARED_MODULE_SUFFIX}
                        COMMENT "Compiling pybind11 version of \"${P_TARGET}\""
     )
@@ -82,10 +84,12 @@ function(add_module)
     )
 endfunction()
 
-add_custom_target(common SOURCES common.hxx basic_performance.py)
+add_custom_target(common SOURCES headers/common.hxx py/basic_performance.py)
+include_directories(headers)
 
-include(array/module.cmake)
-include(conversion/module.cmake)
-include(list/module.cmake)
+include(cmake/array.cmake)
+include(cmake/conversion.cmake)
+include(cmake/list.cmake)
+include(cmake/tree.cmake)
 
 
