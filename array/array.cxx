@@ -1,5 +1,6 @@
-#include "../common.hxx"
+#include "headers/common.hxx"
 #include <array>
+#include <functional>
 
 constexpr unsigned int ArraySize = 10000;
 

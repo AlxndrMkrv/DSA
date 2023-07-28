@@ -11,14 +11,12 @@ public:
             append(itr2obj(itr));
     }
 
-    std::string __repr__ ()
-    {
+    std::string __repr__ () {
         std::stringstream sstr;
         sstr << "[";
-        for (auto ptr = _first; ptr != nullptr; ptr = ptr->next) {
+        for (auto ptr = _first; ptr != nullptr; ptr = ptr->next)
             sstr << obj2str(ptr->value)
                  << (ptr->next == nullptr ? "" : ", ");
-        }
         sstr << "]";
         return sstr.str();
     }
@@ -95,7 +93,7 @@ DEFINE_MODULE(MODULE_NAME(list), m)
                           py::object & obj){self.insert(idx, obj);})
         .def("pop", [](List &self, int & idx){return self.pop(idx);},
             py::arg("idx") = -1)
-        #elif ENABLE_PB
+        #else
         .def("append", &List::append)
         .def("__len__", &List::size)
         .def("insert", &List::insert)

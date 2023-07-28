@@ -36,7 +36,7 @@ class Basic:
                        globals={'TContainer': TContainer, 'n': n})
                 for n in self.N]
 
-    def measure_initialization(self, TContainer, replay: int = 10):
+    def measure_init_time(self, TContainer, replay: int = 10):
         return [timeit("TContainer(range(n))", number=replay,
                        globals={"TContainer": TContainer, 'n': n})
                 for n in self.N]
