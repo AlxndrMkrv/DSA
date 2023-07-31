@@ -12,12 +12,6 @@ namespace py = nanobind;
 #define DEFINE_MODULE NB_MODULE
 #define MODULE_NAME(name) name ## _nb
 
-inline std::string obj2str (const py::object & obj) {
-    return py::repr(obj).c_str(); }
-
-inline py::object itr2obj (const py::iterator & itr) {
-    return py::borrow(*itr); }
-
 #elif ENABLE_PB
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
@@ -25,11 +19,7 @@ namespace py = pybind11;
 #define DEFINE_MODULE PYBIND11_MODULE
 #define MODULE_NAME(name) name ## _pb
 
-inline std::string obj2str (const py::object & obj) {
-    return py::repr(obj).cast<std::string>(); }
-
-inline py::object itr2obj (const py::iterator & itr) {
-    return py::reinterpret_borrow<py::object>(*itr); }
+namespace pybind11 { using rv_policy = pybind11::return_value_policy; }
 
 #else
 #error "No macro ENABLE_NB nor ENABLE_PB defined"
@@ -37,3 +27,19 @@ inline py::object itr2obj (const py::iterator & itr) {
 
 inline size_t id (const py::object & obj) {
     return reinterpret_cast<size_t>(obj.ptr()); }
+
+inline std::string obj2str (const py::object & obj) {
+#ifdef ENABLE_NB
+    return py::repr(obj).c_str();
+#elif ENABLE_PB
+    return py::repr(obj).cast<std::string>();
+#endif
+}
+
+inline py::object itr2obj (const py::iterator & itr) {
+#ifdef ENABLE_NB
+    return py::borrow(*itr);
+#elif ENABLE_PB
+    return py::reinterpret_borrow<py::object>(*itr);
+#endif
+}

@@ -1,5 +1,3 @@
-/* Copyright (C) 2013 Alexander Makarov */
-
 #pragma once
 #include <functional>
 #include <algorithm>
@@ -17,8 +15,8 @@ public:
         return static_cast<const Derived *>(this)->hash(value);
     }
 
-    std::string to_string(const T & value) const {
-        return static_cast<const Derived *>(this)->to_string(value);
+    std::string toString(const T & value) const {
+        return static_cast<const Derived *>(this)->toString(value);
     }
 
     //
@@ -38,19 +36,21 @@ public:
     }
 
     Node<T, Derived> & operator[] (const T & value) {
-        auto idx = search_index(value);
+        auto idx = searchIndex(value);
         if (idx >= _children || hash(_offspring[idx]->value) != hash(value))
-            throw py::index_error(("value " + to_string(value) +
+            throw py::index_error(("value " + toString(value) +
                                    " not found").c_str());
-
         return *_offspring[idx];
     }
 
+    static constexpr Node<T, Derived> &(&at)(const T &) =
+            &Node<T, Derived>::operator[];
+
     operator std::string () {
         std::stringstream sstr;
-        sstr << to_string(value) << ": {";
+        sstr << toString(value) << ": {";
         for (auto i = 0; i < _children; ++i) {
-            sstr << to_string(_offspring[i]->value)
+            sstr << toString(_offspring[i]->value)
                  << ((i + 1) < _children ? ", " : "");
         }
         sstr << "}";
@@ -58,32 +58,32 @@ public:
     }
 
     void insert(const T & value) {
-        auto idx = search_index(value);
+        auto idx = searchIndex(value);
         if (idx < _children && hash(value) == hash(_offspring[idx]->value))
-            throw py::index_error(("value '" + to_string(value) +
+            throw py::index_error(("value '" + toString(value) +
                                    "' already present").c_str());
 
-        allocate_memory_if_necessary();
+        allocateMemoryIfNecessary();
         if (idx < _children)
-            push_apart(idx);
+            pushApart(idx);
         _offspring[idx] = new Node<T, Derived>(value, this);
         ++_children;
     }
 
     void remove(const T & value) {
         // find given value in _children and remove it if exists
-        auto idx = search_index(value);
+        auto idx = searchIndex(value);
         if (idx >= _children || hash(value) != hash(_offspring[idx]->value))
-            throw py::index_error(("value '" + to_string(value) +
+            throw py::index_error(("value '" + toString(value) +
                                    "' not present").c_str());
 
         delete _offspring[idx];
-        pull_togather(idx);
+        pullTogather(idx);
     }
 
 
 protected:
-    void allocate_memory_if_necessary() {
+    void allocateMemoryIfNecessary() {
         if (!_offspringLimit) {
             // Acquire space for 2 child nodes if the node was a leaf
             _offspringLimit = 2;
@@ -100,14 +100,14 @@ protected:
         }
     }
 
-    void push_apart(const size_t & idx) {
+    void pushApart(const size_t & idx) {
         // shift pointers so idx will be free for insertion
         std::move_backward(_offspring + idx, _offspring + _children,
                            _offspring + _children + 1);
         _offspring[idx] = nullptr;
     }
 
-    void pull_togather(const size_t & idx) {
+    void pullTogather(const size_t & idx) {
         //
         std::move(_offspring + idx + 1, _offspring + _children,
                   _offspring + idx);
@@ -117,7 +117,7 @@ protected:
      * Returns index which
      * hash(_children[index]) <= hash(value) < hash(children[index+1])
      * so returned value requires addition check for insertion and getting */
-    size_t search_index(const T & value) const {
+    size_t searchIndex(const T & value) const {
         if (_children == 0)
             return 0;
 

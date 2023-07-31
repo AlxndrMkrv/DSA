@@ -12,7 +12,7 @@ endif()
 
 find_package(Python ${REQUIRED_PYTHON_VERSION}
                     COMPONENTS Interpreter
-                               Development.Module
+                               Development
                     REQUIRED
 )
 
@@ -40,7 +40,7 @@ nanobind_build_library(nanobind-static)
 
 
 function(add_module)
-    set(vars TARGET TEST PERFORMANCE)
+    set(vars TARGET TEST PERFORMANCE DEBUG)
     set(lists SOURCES HEADERS)
     cmake_parse_arguments( P "" "${vars}" "${lists}" ${ARGN} )
 
@@ -53,7 +53,7 @@ function(add_module)
                      -fvisibility=hidden -g)
 
     add_custom_target(${P_TARGET} SOURCES ${P_SOURCES} ${P_HEADERS}
-                                          ${P_TEST} ${P_PERFORMANCE}
+                                          ${P_TEST} ${P_PERFORMANCE} ${P_DEBUG}
                                   DEPENDS nanobind-static
     )
     add_custom_command(TARGET ${P_TARGET} PRE_BUILD
@@ -83,6 +83,20 @@ function(add_module)
                      ${PROJECT_SOURCE_DIR}/${P_TEST}
              WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
+    if(P_DEBUG AND (${CMAKE_BUILD_TYPE} STREQUAL "Debug"))
+        add_custom_target(${P_TARGET}_debug SOURCES ${P_DEBUG} ${P_SOURCES}
+                          COMMAND ${CMAKE_CXX_COMPILER}
+                                  ${PROJECT_SOURCE_DIR}/${P_DEBUG}
+                                  ${MOD_SOURCES}
+                                  -I${Python_INCLUDE_DIRS} -O0 -ggdb
+                                  -fvisibility=hidden -DENABLE_PB
+                                  -I${pybind11_INCLUDE_DIR}
+                                  -I${PROJECT_SOURCE_DIR}
+                                  -lpython${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}
+                                  -o debug_${P_TARGET}_pb
+                          COMMENT "Compiling debug file"
+        )
+    endif()
 endfunction()
 
 add_custom_target(common SOURCES headers/common.hxx py/basic_performance.py)
@@ -93,4 +107,11 @@ include(cmake/conversion.cmake)
 include(cmake/list.cmake)
 include(cmake/tree.cmake)
 
+#add_executable(debug EXCLUDE_FROM_ALL tree/debug.cxx)
+#target_compile_options(debug PUBLIC "-O0 -ggdb")
+#target_include_directories(debug PUBLIC ${pybind11_INCLUDE_DIR}
+#                                        ${Python_INCLUDE_DIRS}
+#                                        ${CMAKE_INC})
+#target_compile_definitions(debug PUBLIC ENABLE_PB)
+#target_link_libraries(debug PUBLIC ${Python_LIBRARIES})
 

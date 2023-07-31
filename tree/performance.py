@@ -50,7 +50,7 @@ class Performance (Basic):
                 for n in self.N]
 
     def measure_get_time(self, TContainer, replay: int = 10):
-        return [timeit("[obj[i] for i in range(n)]", number = replay,
+        return [timeit("[obj[i] for i in range(n)]", number=replay,
                        globals={"obj": self.__fill_tree(TContainer, n), 'n': n})
                 for n in self.N]
 
@@ -58,7 +58,7 @@ class Performance (Basic):
     def plot(self):
         fig, ax = plt.subplots(2, 2, sharex=True)
         for i, j, title, method in [(0, 0, "Initialize", self.measure_init_time),
-                                    (0, 1, "Insert", self.measure_insert_time),
+                                    #(0, 1, "Insert", self.measure_insert_time),
                                     #(1, 0, "Remove", self.measure_remove_time),
                                     (1, 1, "Get", self.measure_get_time)
                                     ]:
