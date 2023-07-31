@@ -106,6 +106,7 @@ include(cmake/array.cmake)
 include(cmake/conversion.cmake)
 include(cmake/list.cmake)
 include(cmake/tree.cmake)
+include(cmake/binary_tree.cmake)
 
 #add_executable(debug EXCLUDE_FROM_ALL tree/debug.cxx)
 #target_compile_options(debug PUBLIC "-O0 -ggdb")
