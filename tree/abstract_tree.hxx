@@ -10,7 +10,7 @@
 template<class T, class Derived>
 class Node {
 public:
-    /*    methods to implement   */
+    /* ========================= CRPT interface ========================= */
     size_t hash(const T & value) const {
         return static_cast<const Derived *>(this)->hash(value);
     }

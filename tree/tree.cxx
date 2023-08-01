@@ -1,5 +1,4 @@
 #include "tree/tree.hxx"
-#include <functional>
 
 
 DEFINE_MODULE(MODULE_NAME(tree), m)
