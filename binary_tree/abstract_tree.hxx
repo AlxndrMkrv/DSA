@@ -19,16 +19,16 @@ template<class T, class Derived>
 class Node {
 public:
     /* ========================= CRTP interface ========================= */
-    bool operator < (const T & value) const {
-        return static_cast<const Derived *>(this)->operator<(value);
-    }
-
-    bool operator == (const T & value) const {
-        return static_cast<const Derived *>(this)->operator==(value);
-    }
-
     std::string toString(const T & value) const {
         return static_cast<const Derived *>(this)->toString(value);
+    }
+
+    static bool isEqual (const T & lhs, const T & rhs) {
+        return Derived::isEqual(lhs, rhs);
+    }
+
+    static bool isLess (const T & lhs, const T & rhs) {
+        return Derived::isLess(lhs, rhs);
     }
 
     /* ======================= Node implementation ====================== */
@@ -90,32 +90,32 @@ public:
     operator std::string() {
         std::string buffer;
         if (_left != nullptr)
-            buffer += *_left + ", ";
+            buffer += static_cast<std::string>(*_left) + ", ";
         buffer += toString(_fruit);
         if (_right != nullptr)
-            buffer += ", " + *_right;
+            buffer += ", " + static_cast<std::string>(*_right);
         return buffer;
     }
 
     /* Change the node parent for rearrange purposes */
-    void relocate(const Node<T, Derived> * newParent) {
+    void relocate(Node<T, Derived> * newParent) {
         _parent = newParent;
     }
 
     /* Add new fruit to the tree */
     void add(const T & theFruit) {
-        /* return silently if value already present */
-        if (*this == theFruit) {
+        // return silently if value already present
+        if (isEqual(this->_fruit, theFruit)) {
             return;
         }
 
-        Node<T, Derived> ** child = descendant(value);
+        Node<T, Derived> ** child = descendant(theFruit);
         // pass value to the next node if exist or create new
         if (*child)
-            (*child)->add(value);
+            (*child)->add(theFruit);
         else {
-            *child = new Node<T, Derived>(value, this);
-            incrementChildren();
+            *child = new Node<T, Derived>(theFruit, this);
+            incrementFruitsNumber();
         }
     }
 
@@ -125,7 +125,7 @@ public:
             /* delete left node if it's a leaf */
             const T tmp = _left->_value;
             delete _left;
-            decrementChildren();
+            decrementFruitsNumber();
             _left = nullptr;
             return tmp;
         } else if (! _left->_left) {
@@ -135,7 +135,7 @@ public:
             newLeft->relocate(this);
             delete _left;
             _left = newLeft;
-            decrementChildren();
+            decrementFruitsNumber();
             return tmp;
         } else {
             /* recursively call pop() down on the left branch */
@@ -145,11 +145,6 @@ public:
 
     bool contains(const T & value) {
         return findNode(value) != nullptr;
-    }
-
-private:
-    inline Node<T, Derived> ** descendant (const T & value) {
-        return (value < *this) ? &_left : &_right;
     }
 
 
@@ -173,12 +168,12 @@ public:
 protected:
     inline void incrementFruitsNumber() {
         ++_nFruits;
-        _parent->incrementChildren();
+        _parent->incrementFruitsNumber();
     }
 
     inline void decrementFruitsNumber() {
         --_nFruits;
-        _parent->decrementChildren();
+        _parent->decrementFruitsNumber();
     }
 
     void adoptOrphanBranch(Node<T, Derived> * orphan) {
@@ -191,12 +186,12 @@ protected:
     }
 
     Node<T, Derived> * findNode(const T & theFruit) {
-        if (*this == theFruit)
+        if (isEqual(this->_fruit, theFruit))
             return this;
 
-        Node<T, Derived> ** direction = (theFruit < *this) ? left : right;
-        return *direction == nullptr ? nullptr
-                                     : (*direction)->findNode(theFruit);
+        Node<T, Derived> ** branch = descendant(theFruit);
+        return *branch == nullptr ? nullptr
+                                  : (*branch)->findNode(theFruit);
     }
 
     // Merge togather left and right branches and return the node value
@@ -228,9 +223,14 @@ protected:
         delete strong;
         adoptOrphanBranch(weak);
         // one node goes away so decrement children
-        decrementChildren();
+        decrementFruitsNumber();
         // return old value
         return tmp;
+    }
+
+private:
+    inline Node<T, Derived> ** descendant (const T & theFruit) {
+        return (isLess(theFruit, this->_fruit)) ? &_left : &_right;
     }
 
 protected:
@@ -246,28 +246,28 @@ template<class T, class Derived>
 struct RootNode : public Node<T, Derived>
 {
 public:
-    RootNode () : Node(), _nFruits(0) {}
-    RootNode (const T & theFruit) : Node(theFruit, nullptr), _nFruits(1) {}
+    RootNode () : Node<T, Derived>() {}
+    RootNode (const T & theFruit) : Node<T, Derived>(theFruit, nullptr) {}
 
     operator std::string () {
-        return "{" + Node<T, Derived>::operator std::string() + "}";
+        return "{" + static_cast<std::string>(*this) + "}";
     }
 
     /* Add the given value to tree */
     void add(const T & theFruit) {
-        if (! size()) {
-            _fruit = theFruit;
-            incrementChildren();
+        if (this->isEmpty()) {
+            this->_fruit = theFruit;
+            incrementFruitsNumber();
         } else
             Node<T, Derived>::add(theFruit);
     }
 
     /* Removing the given value from tree */
     void remove(const T & theFruit) {
-        if (isEmpty())
+        if (this->isEmpty())
             throw py::key_error("removing from empty tree");
 
-        Node<T, Derived> * nodeToRemove = findNode(theFruit);
+        Node<T, Derived> * nodeToRemove = this->findNode(theFruit);
         if (! nodeToRemove)
             throw py::key_error("value not presented");
 
@@ -276,23 +276,18 @@ public:
 
     /* Remove and return the lowerest value from tree */
     T pop() {
-        if (!_nFruits)
+        if (! this->_nFruits)
             throw py::key_error("binary tree is empty");
         Node<T, Derived>::pop();
     }
 
-    /* Get total number of values on the tree */
-    inline size_t fruits () const {
-        return _nFruits;
-    }
-
 protected:
     inline void incrementFruitsNumber() {
-        ++_nFruits;
+        ++this->_nFruits;
     }
 
     inline void decrementFruitsNumber() {
-        --_nFruits;
+        --this->_nFruits;
     }
-}
+};
 
