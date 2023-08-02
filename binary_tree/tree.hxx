@@ -1,25 +1,35 @@
 #pragma once
-#include "abstract_tree.hxx"
+#include "binary_tree/abstract_tree.hxx"
 
-#include <pybind11/pybind11.h>
+struct Tree : public RootNode<py::object, Tree> {
+    // Construct empty tree
+    Tree() : RootNode<py::object, Tree>() {}
 
-struct PyNode : public Node<py::object, PyNode> {
-    bool operator < (const py::object & value) const {
-        return this->value() < value;
+    // Construct tree from iterable
+    Tree(const py::object & iterable) : RootNode<py::object, Tree>() {
+        for (auto itr = iterable.begin(); itr != iterable.end(); ++itr)
+            add(itr2obj(itr));
     }
 
-    bool operator == (const py::object & value) const {
-        return this->value() == value;
+    // equality static check
+    static inline bool isEqual (const py::object &lhs, const py::object &rhs) {
+        return lhs.equal(rhs);
     }
 
+    // comparison static check
+    static bool isLess (const py::object &lhs, const py::object &rhs) {
+        return lhs < rhs;
+    }
+
+    // alias
     static constexpr std::string (&toString)(const py::object &) = obj2str;
 
-    size_t __len__() const {
+
+    inline size_t __len__() const {
         return _nFruits;
     }
-};
 
-
-struct PyTree : public RootNode<py::object, PyTree> {
-    PyTree(const T &)
+    inline std::string __repr__() {
+        return static_cast<std::string>(*this);
+    }
 };

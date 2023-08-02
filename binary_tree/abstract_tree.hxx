@@ -7,7 +7,9 @@
 #include "headers/common.hxx"
 
 
-/* This binary tree is kinda implementing python 'set'.
+/* This tree implementation is relied on '<' and '==' operations which must be
+ * implemented in Derived class. Thus it can hold only comparable types.
+ *
  * Current implementation will work fine if filled with unordered random data.
  * However feeding it with ordered data array will transform it to
  * kind of linked list with O(n) access complexity.
@@ -19,26 +21,26 @@ template<class T, class Derived>
 class Node {
 public:
     /* ========================= CRTP interface ========================= */
-    std::string toString(const T & value) const {
+    inline std::string toString(const T & value) const {
         return static_cast<const Derived *>(this)->toString(value);
     }
 
-    static bool isEqual (const T & lhs, const T & rhs) {
+    static inline bool isEqual (const T & lhs, const T & rhs) {
         return Derived::isEqual(lhs, rhs);
     }
 
-    static bool isLess (const T & lhs, const T & rhs) {
+    static inline bool isLess (const T & lhs, const T & rhs) {
         return Derived::isLess(lhs, rhs);
     }
 
     /* ======================= Node implementation ====================== */
 protected:
-    // Constructor for uninitialized root node
+    // Constructor for a fruitless root node. Root may be empty.
     Node() :
         _nFruits(0), _parent(nullptr), _left(nullptr), _right(nullptr) {}
 
 public:
-    // Common constructor
+    // Constructor for a node. Node can't be empty.
     Node(const T & theFruit, Node<T, Derived> * parent) :
         _fruit(theFruit), _nFruits(1), _parent(parent),
         _left(nullptr), _right(nullptr) {}
@@ -68,22 +70,27 @@ public:
     /* Move assignment must care only about branch pointers. Other objects
      * handling depends on situation */
     Node<T, Derived> & operator=(Node<T, Derived> && other) {
-        _left = std::move(other._left);
-        _right = std::move(other._right);
-        if (other._left) {
-            other._left->relocate(this);
-            other._left = nullptr;
-        }
-        if (other._right) {
-            other._right->relocate(this);
-            other._right = nullptr;
-        }
+        moveBranches(&other);
         return *this;
     }
 
     ~Node() {
         delete _left;
         delete _right;
+    }
+
+    /* Move left and right branches */
+    void moveBranches(Node<T, Derived> * other) {
+        _left = std::move(other->_left);
+        _right = std::move(other->_right);
+        if (other->_left) {
+            other->_left->relocate(this);
+            other->_left = nullptr;
+        }
+        if (other->_right) {
+            other->_right->relocate(this);
+            other->_right = nullptr;
+        }
     }
 
     /* Concatenate fruits from branches with node fruit */
@@ -104,19 +111,46 @@ public:
 
     /* Add new fruit to the tree */
     void add(const T & theFruit) {
-        // return silently if value already present
+        // return silently if fruit already present
         if (isEqual(this->_fruit, theFruit)) {
             return;
         }
 
         Node<T, Derived> ** child = descendant(theFruit);
-        // pass value to the next node if exist or create new
+        // pass the fruit to the next node if exist or create new
         if (*child)
             (*child)->add(theFruit);
         else {
             *child = new Node<T, Derived>(theFruit, this);
             incrementFruitsNumber();
         }
+    }
+
+    // Merge togather left and right branches and return the node value
+    T mergeBranches() {
+        if (isLeaf())
+            return _fruit;
+
+        /* make temporary copy of current value and
+         * decide which branch has more weight */
+        const T tmp = _fruit;
+        Node<T, Derived> * strong = ! _left ||
+                (_left && _right &&
+                 _right->fruits() > _left->fruits()) ? _right : _left;
+        Node<T, Derived> * weak = (strong == _left) ? _right : _left;
+
+        // move strong branch to this
+        _fruit = std::move(strong->_fruit);
+        moveBranches(strong);
+        // delete strong branch
+        delete strong;
+        // adopt weak branch if it's not a leaf
+        if (weak)
+            adoptOrphanBranch(weak);
+        // one node goes away so decrement children
+        decrementFruitsNumber();
+        // return old value
+        return tmp;
     }
 
     /* remove the least Node and return it's value */
@@ -143,13 +177,9 @@ public:
         }
     }
 
-    bool contains(const T & value) {
-        return findNode(value) != nullptr;
-    }
-
 
 public:
-    inline T value () const {
+    inline T fruit () const {
         return _fruit;
     }
 
@@ -165,26 +195,6 @@ public:
         return ! _left && ! _right;
     }
 
-protected:
-    inline void incrementFruitsNumber() {
-        ++_nFruits;
-        _parent->incrementFruitsNumber();
-    }
-
-    inline void decrementFruitsNumber() {
-        --_nFruits;
-        _parent->decrementFruitsNumber();
-    }
-
-    void adoptOrphanBranch(Node<T, Derived> * orphan) {
-        Node<T, Derived> ** child = descendant(orphan->_fruit);
-        if (! *child) {
-            *child = orphan;
-            orphan->relocate(this);
-        } else
-            (*child)->adoptOrphanBranch(orphan);
-    }
-
     Node<T, Derived> * findNode(const T & theFruit) {
         if (isEqual(this->_fruit, theFruit))
             return this;
@@ -194,38 +204,26 @@ protected:
                                   : (*branch)->findNode(theFruit);
     }
 
-    // Merge togather left and right branches and return the node value
-    T mergeBranches() {
-        if (isLeaf())
-            return _fruit;
+protected:
+    inline void incrementFruitsNumber() {
+        ++_nFruits;
+        if (_parent) // if _parent is nullptr than 'this' is RootNode
+            _parent->incrementFruitsNumber();
+    }
 
-        /* make temporary copy of current value and
-         * decide which branch has more weight */
-        const T tmp = _fruit;
-        Node<T, Derived> * strong = ! _left ||
-                (_left && _right &&
-                 _right->children() > _left->children()) ? _right : _left;
-        Node<T, Derived> * weak = strong == _left ? _right : _left;
+    inline void decrementFruitsNumber() {
+        --_nFruits;
+        if (_parent) // if _parent is nullptr than 'this' is RootNode
+            _parent->decrementFruitsNumber();
+    }
 
-        _fruit = strong->_fruit;
-        // move here left and right branches of strongest
-        _left = strong->_left;
-        if (_left) {
-            _left->relocate(this);
-            strong->_left = nullptr;
-        }
-        _right = strong->_right;
-        if (_right) {
-            _right->relocate(this);
-            strong->_right = nullptr;
-        }
-        // delete strong branch node and adopt weak branch
-        delete strong;
-        adoptOrphanBranch(weak);
-        // one node goes away so decrement children
-        decrementFruitsNumber();
-        // return old value
-        return tmp;
+    void adoptOrphanBranch(Node<T, Derived> * orphan) {
+        Node<T, Derived> ** child = descendant(orphan->_fruit);
+        if (! *child) {
+            *child = orphan;
+            orphan->relocate(this);
+        } else
+            (*child)->adoptOrphanBranch(orphan);
     }
 
 private:
@@ -253,16 +251,25 @@ public:
         return "{" + static_cast<std::string>(*this) + "}";
     }
 
-    /* Add the given value to tree */
+    /* Clear tree */
+    void clear() {
+        delete this->_left;
+        this->_left = nullptr;
+        delete this->_right;
+        this->_right = nullptr;
+        this->_nFruits = 0;
+    }
+
+    /* Add the given fruit to tree */
     void add(const T & theFruit) {
         if (this->isEmpty()) {
             this->_fruit = theFruit;
-            incrementFruitsNumber();
+            Node<T, Derived>::incrementFruitsNumber();
         } else
             Node<T, Derived>::add(theFruit);
     }
 
-    /* Removing the given value from tree */
+    /* Removing the given fruit from tree */
     void remove(const T & theFruit) {
         if (this->isEmpty())
             throw py::key_error("removing from empty tree");
@@ -274,20 +281,15 @@ public:
         nodeToRemove->mergeBranches();
     }
 
-    /* Remove and return the lowerest value from tree */
+    /* Remove and return the least fruit from tree */
     T pop() {
         if (! this->_nFruits)
             throw py::key_error("binary tree is empty");
         Node<T, Derived>::pop();
     }
 
-protected:
-    inline void incrementFruitsNumber() {
-        ++this->_nFruits;
-    }
-
-    inline void decrementFruitsNumber() {
-        --this->_nFruits;
+    /* Check if given fruit is on the tree */
+    inline bool contains(const T & theFruit) {
+        return this->findNode(theFruit) != nullptr;
     }
 };
-
