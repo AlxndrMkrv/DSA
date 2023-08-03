@@ -127,6 +127,9 @@ public:
     }
 
     // Merge togather left and right branches and return the node value
+    /* Note: the other way to implement mergeBranches() is to move up the
+     * leftes node in the right branch with findLeast() and abandon() methods.
+     * This will let to rid of weight calculations */
     T mergeBranches() {
         if (isLeaf())
             return _fruit;
@@ -201,6 +204,34 @@ public:
         Node<T, Derived> ** branch = descendant(theFruit);
         return *branch == nullptr ? nullptr
                                   : (*branch)->findNode(theFruit);
+    }
+
+    // recursively find the least fruit
+    Node<T, Derived> * findLeast() {
+        if (! _left)
+            return this;
+        else
+            return _left->findLeast();
+    }
+
+    // abandon given node
+    void abandon (Node<T, Derived> * node) {
+        if (_left == node) {
+            _left = nullptr;
+            decrementFruitsNumber();
+        } else if (_right == node) {
+            _right = nullptr;
+            decrementFruitsNumber();
+        } else
+            throw py::key_error("abandoning node is not in branches");
+    }
+
+    // rebalance. See AVL-trees
+    void rebalance () {
+        if (isLeaf() || (std::max(_left->fruits(), _right->fruits()) -
+                         std::min(_left->fruits(), _right->fruits()) <= 1))
+            return;
+        // some tricky algirithm
     }
 
 protected:
