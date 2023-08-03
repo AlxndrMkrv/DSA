@@ -21,8 +21,8 @@ template<class T, class Derived>
 class Node {
 public:
     /* ========================= CRTP interface ========================= */
-    inline std::string toString(const T & value) const {
-        return static_cast<const Derived *>(this)->toString(value);
+    static inline std::string toString(const T & value) {
+        return Derived::toString(value);
     }
 
     static inline bool isEqual (const T & lhs, const T & rhs) {
@@ -153,48 +153,47 @@ public:
         return tmp;
     }
 
-    /* remove the least Node and return it's value */
+    /* Remove the leftest Node and return its fruit */
     T pop() {
-        if (_left->isEmpty()) {
-            /* delete left node if it's a leaf */
-            const T tmp = _left->_value;
-            delete _left;
-            decrementFruitsNumber();
-            _left = nullptr;
-            return tmp;
-        } else if (! _left->_left) {
-            /* move left's right node up if there's no left's left */
-            const T tmp = _left->_value;
-            Node<T, Derived> * newLeft = _left->_right;
-            newLeft->relocate(this);
-            delete _left;
-            _left = newLeft;
+        if (_left) {
+            if (! _left->isLeaf())
+                /* delegate the problem to the left branch if it's not a leaf */
+                return _left->pop();
+            else {
+                /* remove the leaf and delete it */
+                const T tmp = _left->fruit();
+                delete _left;
+                _left = nullptr;
+                decrementFruitsNumber();
+                return tmp;
+            }
+        } else if (_right) {
+            /* move right branch to this if exist */
+            const T tmp = _fruit;
+            Node<T, Derived> * right = _right;
+            _fruit = _right->fruit();
+            moveBranches(_right);
+            delete right;
             decrementFruitsNumber();
             return tmp;
         } else {
-            /* recursively call pop() down on the left branch */
-            _left->pop();
+            /* root without branches */
+            decrementFruitsNumber();
+            return _fruit;
         }
     }
 
 
 public:
-    inline T fruit () const {
-        return _fruit;
-    }
+    inline T fruit () const { return _fruit; }
 
-    inline size_t fruits() const {
-        return _nFruits;
-    }
+    inline size_t fruits() const { return _nFruits; }
 
-    inline bool isEmpty() const {
-        return ! _nFruits;
-    }
+    inline bool isEmpty() const { return ! _nFruits; }
 
-    inline bool isLeaf() const {
-        return ! _left && ! _right;
-    }
+    inline bool isLeaf() const { return ! _left && ! _right; }
 
+    // recursively find the node with the given fruit
     Node<T, Derived> * findNode(const T & theFruit) {
         if (isEqual(this->_fruit, theFruit))
             return this;
@@ -248,7 +247,7 @@ public:
     RootNode (const T & theFruit) : Node<T, Derived>(theFruit, nullptr) {}
 
     operator std::string () {
-        return "{" + static_cast<std::string>(*this) + "}";
+        return "{" + Node<T, Derived>::operator std::string() + "}";
     }
 
     /* Clear tree */
@@ -285,7 +284,7 @@ public:
     T pop() {
         if (! this->_nFruits)
             throw py::key_error("binary tree is empty");
-        Node<T, Derived>::pop();
+        return Node<T, Derived>::pop();
     }
 
     /* Check if given fruit is on the tree */

@@ -16,16 +16,22 @@ std::vector<int> sequence () {
     return {1,2,3};
 }
 
-py::object importTree () {
+py::object importType (const std::string & module,
+                         const std::string & type) {
     py::module_ sys = py::module_::import("sys");
     py::list PATH = sys.attr("path");
     py::str curdir = py::module_::import("os").attr("curdir");
     PATH.append(curdir);
-    py::module_ treeModule = py::module_::import("binary_tree_pb");
-    return treeModule.attr("Tree");
+    py::module_ moduleObject = py::module_::import(module.c_str());
+    return moduleObject.attr(type.c_str());
 }
 
 struct IntTree : public RootNode<int, IntTree> {
+    // T->string converter
+    static inline std::string toString (const int &value) {
+        return std::to_string(value);
+    }
+
     // equality static check
     static inline bool isEqual (const int &lhs, const int &rhs) {
         return lhs == rhs;
@@ -36,6 +42,12 @@ struct IntTree : public RootNode<int, IntTree> {
         return lhs < rhs;
     }
 } itree;
+
+void pop_cxx() {
+    for (int x: sequence())
+        itree.add(x);
+    itree.pop();
+}
 
 void clear_cxx() {
     for (int x : sequence())
@@ -50,8 +62,16 @@ void remove_cxx() {
     itree.remove(1);
 }
 
+void print_cxx() {
+    itree.clear();
+    for (int x : sequence())
+        itree.add(x);
+
+    std::cout << static_cast<std::string>(itree) << std::endl;
+}
+
 void remove_py() {
-    py::object tree = importTree()();
+    py::object tree = importType("binary_tree_pb", "Tree")();
     for (int x : sequence())
         tree.attr("add")(py::int_(x));
 
@@ -69,6 +89,9 @@ void repr_cxx() {
 
 int main () {
     py::scoped_interpreter guard{};
+
+    pop_cxx();
+    print_cxx();
 
     clear_cxx();
     remove_cxx();
