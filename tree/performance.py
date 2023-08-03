@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.curdir)
 
-from basic_performance import Basic
+from basic_performance import Base
 import tree_nb
 import tree_pb
 
@@ -26,7 +26,7 @@ TestObjects = {"dict": MyDict,
                "Tree_pb11": tree_pb.Tree
 }
 
-class Performance (Basic):
+class Performance (Base):
     def measure_init_time(self, TContainer, replay: int = 10):
         return [timeit("TContainer(1, 1)", number=replay,
                        globals={"TContainer": TContainer, "n": n})
