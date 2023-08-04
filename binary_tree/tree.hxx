@@ -26,7 +26,7 @@ struct Tree : public RootNode<py::object, Tree> {
 
 
     inline size_t __len__() const {
-        return _nFruits;
+        return _weight;
     }
 
     inline std::string __repr__() {

@@ -37,12 +37,12 @@ public:
 protected:
     // Constructor for a fruitless root node. Root may be empty.
     Node() :
-        _nFruits(0), _parent(nullptr), _left(nullptr), _right(nullptr) {}
+        _weight(0), _parent(nullptr), _left(nullptr), _right(nullptr) {}
 
 public:
     // Constructor for a node. Node can't be empty.
     Node(const T & theFruit, Node<T, Derived> * parent) :
-        _fruit(theFruit), _nFruits(1), _parent(parent),
+        _fruit(theFruit), _weight(1), _parent(parent),
         _left(nullptr), _right(nullptr) {}
 
     /* Disable copy constructor/assignment to prevent segfaults due to
@@ -53,7 +53,7 @@ public:
     /* Move constructor */
     Node(Node && other) :
         _fruit(std::move(other._fruit)),
-        _nFruits(std::move(other._nFruits)),
+        _weight(std::move(other._weight)),
         _parent(std::move(other._parent)),
         _left(std::move(other._left)),
         _right(std::move(other._right)) {
@@ -122,7 +122,7 @@ public:
             (*child)->add(theFruit);
         else {
             *child = new Node<T, Derived>(theFruit, this);
-            incrementFruitsNumber();
+            increaseWeight();
         }
     }
 
@@ -151,7 +151,7 @@ public:
         if (weak)
             adoptOrphanBranch(weak);
         // one node goes away so decrement children
-        decrementFruitsNumber();
+        decreaseWeight();
         // return old value
         return tmp;
     }
@@ -167,7 +167,7 @@ public:
                 const T tmp = _left->fruit();
                 delete _left;
                 _left = nullptr;
-                decrementFruitsNumber();
+                decreaseWeight();
                 return tmp;
             }
         } else if (_right) {
@@ -177,11 +177,11 @@ public:
             _fruit = _right->fruit();
             moveBranches(_right);
             delete right;
-            decrementFruitsNumber();
+            decreaseWeight();
             return tmp;
         } else {
             /* root without branches */
-            decrementFruitsNumber();
+            decreaseWeight();
             return _fruit;
         }
     }
@@ -190,9 +190,9 @@ public:
 public:
     inline T fruit () const { return _fruit; }
 
-    inline size_t fruits() const { return _nFruits; }
+    inline size_t fruits() const { return _weight; }
 
-    inline bool isEmpty() const { return ! _nFruits; }
+    inline bool isEmpty() const { return ! _weight; }
 
     inline bool isLeaf() const { return ! _left && ! _right; }
 
@@ -218,10 +218,10 @@ public:
     void abandon (Node<T, Derived> * node) {
         if (_left == node) {
             _left = nullptr;
-            decrementFruitsNumber();
+            decreaseWeight();
         } else if (_right == node) {
             _right = nullptr;
-            decrementFruitsNumber();
+            decreaseWeight();
         } else
             throw py::key_error("abandoning node is not in branches");
     }
@@ -235,16 +235,16 @@ public:
     }
 
 protected:
-    inline void incrementFruitsNumber() {
-        ++_nFruits;
+    inline void increaseWeight() {
+        ++_weight;
         if (_parent) // if _parent is nullptr than 'this' is RootNode
-            _parent->incrementFruitsNumber();
+            _parent->increaseWeight();
     }
 
-    inline void decrementFruitsNumber() {
-        --_nFruits;
+    inline void decreaseWeight() {
+        --_weight;
         if (_parent) // if _parent is nullptr than 'this' is RootNode
-            _parent->decrementFruitsNumber();
+            _parent->decreaseWeight();
     }
 
     void adoptOrphanBranch(Node<T, Derived> * orphan) {
@@ -263,7 +263,7 @@ private:
 
 protected:
     T _fruit;
-    size_t _nFruits;
+    size_t _weight;
     Node<T, Derived> * _parent;
     Node<T, Derived> * _left;
     Node<T, Derived> * _right;
@@ -287,14 +287,14 @@ public:
         this->_left = nullptr;
         delete this->_right;
         this->_right = nullptr;
-        this->_nFruits = 0;
+        this->_weight = 0;
     }
 
     /* Add the given fruit to tree */
     void add(const T & theFruit) {
         if (this->isEmpty()) {
             this->_fruit = theFruit;
-            Node<T, Derived>::incrementFruitsNumber();
+            Node<T, Derived>::increaseWeight();
         } else
             Node<T, Derived>::add(theFruit);
     }
@@ -313,7 +313,7 @@ public:
 
     /* Remove and return the least fruit from tree */
     T pop() {
-        if (! this->_nFruits)
+        if (! this->_weight)
             throw py::key_error("binary tree is empty");
         return Node<T, Derived>::pop();
     }
