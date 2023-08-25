@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.curdir)
 
-from basic_performance import Basic
+from basic_performance import Base
 import list_nb
 import list_pb
 
@@ -15,14 +15,14 @@ TestObjects = {"list": list,
                "StlList_pb11": list_pb.StlList
 }
 
-class Performance (Basic):
+class Performance (Base):
     def plot(self):
         fig, ax = plt.subplots(2, 3, sharex=True)
         for i, j, title, method in [(0, 0, "Append(x)", self.measure_append_time),
                                     (1, 0, "Get middle element", self.measure_get_time),
                                     (0, 1, "Size", self.measure_size_time),
                                     (1, 1, "Insert to middle", self.measure_insert_time),
-                                    (0, 2, "Pop from middle", self.measure_pop_time),
+                                    #(0, 2, "Pop from middle", self.measure_pop_time),
                                     (1, 2, "Initialization", self.measure_init_time)
                                     ]:
             ax[i][j].set_title(title)

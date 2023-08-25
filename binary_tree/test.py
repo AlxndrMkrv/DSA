@@ -1,7 +1,6 @@
 import pytest
 import random
 
-
 # import tested modules
 import binary_tree_nb as nb
 import binary_tree_pb as pb

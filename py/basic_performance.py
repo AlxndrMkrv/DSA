@@ -19,16 +19,17 @@ class Base:
 
     def measure_append_time(self, TContainer, replay: int = 10):
         return [timeit(f"[obj.append(0) for i in range({n})]", number=replay,
-                       globals={'obj': TContainer()})
+                       globals={"obj": TContainer()})
                 for n in self.N]
 
     def measure_get_time(self, TContainer, replay: int = 10):
         return [timeit(f"obj[{int(n/2)}]", number=replay,
-                       globals={'obj': self.__init_container(TContainer, n)})
+                       globals={"obj": self.__init_container(TContainer, n)})
                 for n in self.N]
 
     def measure_contains_time(self, TContainer, replay: int = 10,
                               randomize: bool = False):
+        ''' Initialize given container and measure __contains__() method '''
         return [timeit(f"int(randint(0, {n})) in obj", number=replay,
                        globals={"obj": self.__init_container(TContainer, n,
                                                              randomize),
@@ -37,18 +38,29 @@ class Base:
 
     def measure_size_time(self, TContainer, replay: int = 10):
         return [timeit("len(obj)", number=replay,
-                       globals={'obj': self.__init_container(TContainer, n)})
+                       globals={"obj": self.__init_container(TContainer, n)})
                 for n in self.N]
 
-    def measure_insert_time(self, TContainer, replay: int = 10):
+    def measure_insert_time(self, TContainer, replay: int = 10,
+                            position: str = "begin"):
+        ''' Measure performance of inserting to given position '''
         return [timeit(f"obj.insert({int(n/2)}, 0)", number=replay,
-                       globals={'obj': self.__init_container(TContainer, n)})
+                       globals={"obj": self.__init_container(TContainer, n)})
                 for n in self.N]
+
+    def measure_insert_value_time(self, TContainer, replay: int = 10,
+                                  randomize: bool = False):
+        ''' Measure performance of inserting value '''
+        return [timeit(f"obj.insert({n+1})", number=replay,
+                       globals={"obj": self.__init_container(TContainer, n,
+                                                             randomize)})
+                for n in self.N]
+
 
     def measure_pop_time(self, TContainer, replay: int = 10):
         return [timeit("obj.pop(int(n/2))", "obj = TContainer(range(n))",
                        number=replay,
-                       globals={'TContainer': TContainer, 'n': n})
+                       globals={"TContainer": TContainer, 'n': n})
                 for n in self.N]
 
     def measure_init_time(self, TContainer, replay: int = 10,
@@ -57,6 +69,3 @@ class Base:
                        globals={"TContainer": TContainer,
                                 "sequence": Base.make_sequence(n, randomize)})
                 for n in self.N]
-
-
-

@@ -40,7 +40,7 @@ private:
 
 DEFINE_MODULE(MODULE_NAME(array), m)
 {
-    py::class_<StlArray>(m, "StlList")
+    py::class_<StlArray>(m, "StlArray")
         .def(py::init<>())
         .def(py::init<py::object>(), py::arg("iterable"))
         .def("__repr__", &StlArray::__repr__)

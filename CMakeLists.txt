@@ -143,6 +143,9 @@ endfunction()
 # add common files to IDE targets
 add_custom_target(common SOURCES headers/common.hxx py/basic_performance.py)
 
+# add README.md
+add_custom_target(readme SOURCES README.md)
+
 # include project directory to make headers visible for IDE competitor
 include_directories(${PROJECT_SOURCE_DIR})
 

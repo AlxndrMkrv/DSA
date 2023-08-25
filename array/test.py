@@ -16,4 +16,4 @@ all_lists = [pytest.param(getattr(globals()[mod], "StlArray"),
 @prm("module", [pytest.param(nb, marks=dep(name="nb")),
                 pytest.param(pb, marks=dep(name="pb"))])
 def test_exported_types(module):
-    assert hasattr(module, "StlLit")
+    assert hasattr(module, "StlArray")

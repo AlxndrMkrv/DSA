@@ -27,7 +27,7 @@ TestObjects = {"dict": MyDict,
 }
 
 class Performance (Base):
-    def measure_init_time(self, TContainer, replay: int = 10):
+    '''def measure_init_time(self, TContainer, replay: int = 10):
         return [timeit("TContainer(1, 1)", number=replay,
                        globals={"TContainer": TContainer, "n": n})
                 for n in self.N]
@@ -52,19 +52,26 @@ class Performance (Base):
     def measure_get_time(self, TContainer, replay: int = 10):
         return [timeit("[obj[i] for i in range(n)]", number=replay,
                        globals={"obj": self.__fill_tree(TContainer, n), 'n': n})
-                for n in self.N]
+                for n in self.N]'''
 
 
     def plot(self):
         fig, ax = plt.subplots(2, 2, sharex=True)
-        for i, j, title, method in [(0, 0, "Initialize", self.measure_init_time),
+        for i, j, title, method, rand in [(0, 0, "Linear data init",
+                                           self.measure_init_time, False),
+                                          (0, 1, "Random data init",
+                                           self.measure_init_time, True),
+                                          (1, 0, "Insert to linear",
+                                           self.measure_insert_value_time, False),
+                                          (1, 1, "Insert to random",
+                                           self.measure_insert_value_time, True)
                                     #(0, 1, "Insert", self.measure_insert_time),
                                     #(1, 0, "Remove", self.measure_remove_time),
-                                    (1, 1, "Get", self.measure_get_time)
+                                    #(1, 1, "Get", self.measure_get_time)
                                     ]:
             ax[i][j].set_title(title)
             for lbl, obj in TestObjects.items():
-                ax[i][j].plot(self.N, method(obj, 1), label=lbl)
+                ax[i][j].plot(self.N, method(obj, randomize=rand), label=lbl)
             ax[i][j].legend()
             ax[i][j].grid()
 

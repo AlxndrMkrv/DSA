@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <fstream>
 #include "headers/common.hxx"
 
 
@@ -323,3 +324,43 @@ public:
         return this->findNode(theFruit) != nullptr;
     }
 };
+
+
+template<class T, class Derived>
+class Serialize {
+    static void exportTree (const RootNode<T, Derived> & tree,
+                            const std::string & filename) {
+
+    }
+}
+
+/*
+template<class T, class Derived>
+void ExportTree(const RootNode<T, Derived> & tree,
+                const std::string & fileName) {
+    // binary trees storing like this:
+    // 0 | r | rl | rr | rll | rlr | rrl | rrr... and so on
+    size_t depthReached = 0;
+    size_t memoryAllocated = ;
+    // allocate memory for perfectly balanced tree
+    T * memory = new T [-(-tree.fruits() / 2)];
+
+    if (pow(2, depthReached) > memoryAllocated ) {
+        T * newMemory = new T [pow(2, depthReached)];
+
+    }
+    T * memory = new T [tree.fruits()];
+}
+
+template<class T, class Derived>
+RootNode<T, Derived> ImportTree(const std::string & fileName) {
+
+}
+
+size_t ceilToNearestPowerOfTwo (const size_t & value) {
+    int power = 1;
+    while (power < value)
+        power <<= 1;
+    return power;
+}
+*/
