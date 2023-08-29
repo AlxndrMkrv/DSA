@@ -1,4 +1,8 @@
 #include "binary_tree/tree.hxx"
+#include <set>
+
+
+class StlSet;
 
 
 DEFINE_MODULE(MODULE_NAME(binary_tree), m)
@@ -25,4 +29,10 @@ DEFINE_MODULE(MODULE_NAME(binary_tree), m)
         .def("clear", &Tree::clear)
         #endif
         ;
+
+    /*py::class_<StlSet>(m, "StlSet")
+        .def(py::init<>())
+        .def(py::init<py::object>(), py::arg("iterable"))
+        //.def("__len__", )
+        ;*/
 }
